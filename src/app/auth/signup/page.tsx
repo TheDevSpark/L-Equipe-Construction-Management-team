@@ -37,7 +37,30 @@ export default function SignupPage() {
 
     if (error) {
       setError(error.message);
-    } else {
+    } else if (data.user) {
+      // Create profile automatically after successful signup
+      try {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            first_name: name.split(' ')[0] || '',
+            last_name: name.split(' ').slice(1).join(' ') || '',
+            // Don't specify role - let database use default value
+          });
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+          setError("Account created but profile setup failed. Please contact support.");
+          return;
+        }
+      } catch (profileError) {
+        console.error('Error creating profile:', profileError);
+        setError("Account created but profile setup failed. Please contact support.");
+        return;
+      }
+
       setMessage(
         "✅ Sign up successful! Please check your email inbox to verify your account before signing in."
       );

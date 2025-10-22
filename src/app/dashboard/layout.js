@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import "../../app/globals.css";
+import "../globals.css";
 import Layout from "../components/Layout";
+import AuthGuard from "../components/AuthGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,5 +23,9 @@ export default function TeamRootLayout({ children }) {
   // Do not render <html> or <body> here — the root layout owns them.
   // Keep the font variables on the root layout; this file should only
   // wrap pages with the dashboard Layout component.
-  return <Layout>{children}</Layout>;
+  return (
+    <AuthGuard requireAuth={true}>
+      <Layout>{children}</Layout>
+    </AuthGuard>
+  );
 }
