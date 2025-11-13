@@ -1,75 +1,92 @@
 "use client";
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../../lib/supabaseClinet";
+import { supabase } from "@/lib/supabaseClinet";
+
+type FormData = {
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+  confirmPassword: string;
+};
 
 export default function SignupPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formData, setFormData] = useState<FormData>({
+    name: "",
+    email: "",
+    phone: "",
+    password: "",
+    confirmPassword: "",
+  });
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleSignup = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setMessage("");
+    setIsLoading(true);
+
+    const { name, email, phone, password, confirmPassword } = formData;
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      setIsLoading(false);
       return;
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${location.origin}/auth/signin`, // After email verify redirect
-        data: {
-          full_name: name,
-          phone_number: phone,
+    try {
+      // Sign up the user with Supabase Auth
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/signin`,
+          data: {
+            full_name: name,
+            phone_number: phone,
+            role: 'team'  // Add role to user metadata
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      setError(error.message);
-    } else if (data.user) {
-      // Create profile automatically after successful signup
-      try {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            first_name: name.split(' ')[0] || '',
-            last_name: name.split(' ').slice(1).join(' ') || '',
-            // Don't specify role - let database use default value
-          });
+      if (signUpError) throw signUpError;
 
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          setError("Account created but profile setup failed. Please contact support.");
-          return;
-        }
-      } catch (profileError) {
-        console.error('Error creating profile:', profileError);
-        setError("Account created but profile setup failed. Please contact support.");
-        return;
+      if (authData.user) {
+        // The database trigger will handle profile creation
+        // No need to manually insert into profiles table
+
+        setMessage(
+          "✅ Sign up successful! Please check your email to verify your account."
+        );
+
+        // Reset form
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          password: "",
+          confirmPassword: "",
+        });
+
+        // Optionally redirect to login after a delay
+        setTimeout(() => {
+          router.push("/auth/signin");
+        }, 3000);
       }
-
-      setMessage(
-        "✅ Sign up successful! Please check your email inbox to verify your account before signing in."
-      );
-      // Optionally clear form
-      setName("");
-      setEmail("");
-      setPhone("");
-      setPassword("");
-      setConfirmPassword("");
+    } catch (error: any) {
+      console.error("Signup error:", error);
+      setError(error.message || "An error occurred during signup. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -116,11 +133,12 @@ export default function SignupPage() {
             </label>
             <input
               id="name"
+              name="name"
               type="text"
               placeholder="John Doe"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+              value={formData.name}
+              onChange={handleChange}
               required
             />
           </div>
@@ -128,17 +146,18 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-black mb-1"
             >
               Email
             </label>
             <input
               id="email"
+              name="email"
               type="email"
               placeholder="you@example.com"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+              value={formData.email}
+              onChange={handleChange}
               required
             />
           </div>
@@ -146,53 +165,59 @@ export default function SignupPage() {
           <div>
             <label
               htmlFor="phone"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-black mb-1"
             >
               Phone Number
             </label>
             <input
               id="phone"
+              name="phone"
               type="tel"
-              placeholder="+92 300 1234567"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              placeholder="+1 (555) 123-4567"
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+              value={formData.phone}
+              onChange={handleChange}
+              required
             />
           </div>
 
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-black mb-1"
             >
               Password
             </label>
             <input
               id="password"
+              name="password"
               type="password"
               placeholder="••••••••"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+              value={formData.password}
+              onChange={handleChange}
               required
+              minLength={6}
             />
           </div>
 
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-black mb-1"
             >
               Confirm Password
             </label>
             <input
               id="confirmPassword"
+              name="confirmPassword"
               type="password"
               placeholder="••••••••"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-black"
+              value={formData.confirmPassword}
+              onChange={handleChange}
               required
+              minLength={6}
             />
           </div>
 

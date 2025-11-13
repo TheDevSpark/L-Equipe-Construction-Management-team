@@ -1,10 +1,14 @@
 "use client";
 
-import { useAuth } from '../contexts/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useAuth } from "@/contexts/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export default function AuthGuard({ children, requireAuth = true, allowedRoles = [] }) {
+export default function AuthGuard({
+  children,
+  requireAuth = true,
+  allowedRoles = [],
+}) {
   const { user, profile, loading, profileLoading } = useAuth();
   const router = useRouter();
 
@@ -12,21 +16,36 @@ export default function AuthGuard({ children, requireAuth = true, allowedRoles =
     if (loading || profileLoading) return;
 
     if (requireAuth && !user) {
-      router.push('/auth/signin');
+      router.push("/auth/signin");
       return;
     }
 
     if (user && !profile && !profileLoading) {
       // User is authenticated but no profile exists and we're not currently creating one
-      console.log('User authenticated but no profile found - this should be handled by AuthContext');
+      console.log(
+        "User authenticated but no profile found - this should be handled by AuthContext"
+      );
     }
 
-    if (requireAuth && profile && allowedRoles.length > 0 && !allowedRoles.includes(profile.role)) {
+    if (
+      requireAuth &&
+      profile &&
+      allowedRoles.length > 0 &&
+      !allowedRoles.includes(profile.role)
+    ) {
       // User doesn't have required role
-      router.push('/dashboard/team'); // Redirect to default dashboard
+      router.push("/dashboard/team"); // Redirect to default dashboard
       return;
     }
-  }, [user, profile, loading, profileLoading, requireAuth, allowedRoles, router]);
+  }, [
+    user,
+    profile,
+    loading,
+    profileLoading,
+    requireAuth,
+    allowedRoles,
+    router,
+  ]);
 
   if (loading || profileLoading) {
     return (
@@ -45,7 +64,12 @@ export default function AuthGuard({ children, requireAuth = true, allowedRoles =
     return null; // Will redirect to login
   }
 
-  if (requireAuth && profile && allowedRoles.length > 0 && !allowedRoles.includes(profile.role)) {
+  if (
+    requireAuth &&
+    profile &&
+    allowedRoles.length > 0 &&
+    !allowedRoles.includes(profile.role)
+  ) {
     return null; // Will redirect to appropriate dashboard
   }
 

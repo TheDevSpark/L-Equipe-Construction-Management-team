@@ -1,4 +1,5 @@
 import Header from "./Header";
+import ProjectSelector from "./ProjectSelector";
 import Sidebar from "./Sidebar";
 
 export default function Layout({ children }) {
@@ -6,11 +7,10 @@ export default function Layout({ children }) {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <Header />
-
+      <ProjectSelector />
       <div className="flex">
         {/* Sidebar */}
         <Sidebar />
-
         {/* Main Content */}
         <main className="flex-1 p-6">{children}</main>
       </div>

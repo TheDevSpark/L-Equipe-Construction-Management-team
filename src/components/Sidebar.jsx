@@ -65,8 +65,8 @@ export default function Sidebar() {
       ),
     },
     {
-      name: "Teams",
-      href: "/dashboard/teams",
+      name: "Tasks",
+      href: "/dashboard/tasks",
       icon: (
         <svg
           className="w-5 h-5"
@@ -111,6 +111,6 @@ export default function Sidebar() {
           })}
         </ul>
       </nav>
-    </aside> 
+    </aside>
   );
 }
